@@ -14,6 +14,7 @@ import com.lankamart.app.presentation.screens.home.MainHomeScreen
 import com.lankamart.app.presentation.screens.login.LoginScreen
 import com.lankamart.app.presentation.screens.splash.SplashScreen
 import com.lankamart.app.presentation.theme.LankaMartTheme
+import com.lankamart.app.presentation.screens.homechoice.HomeChoiceScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,12 +34,11 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.Splash.route) {
                             SplashScreen(navController)
                         }
+                        composable(Screen.HomeChoice.route) {
+                            HomeChoiceScreen(navController)
+                        }
                         composable(Screen.Login.route) {
                             LoginScreen(navController)
-                        }
-                        composable(Screen.Signup.route) {
-                            // TODO: Create SignupScreen later
-                            LoginScreen(navController) // Temporary
                         }
                         composable(Screen.MainHome.route) {
                             MainHomeScreen(navController)
