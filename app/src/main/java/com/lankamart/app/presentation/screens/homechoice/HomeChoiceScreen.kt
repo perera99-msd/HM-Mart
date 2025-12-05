@@ -38,7 +38,7 @@ fun HomeChoiceScreen(navController: NavController) {
             modifier = Modifier.padding(24.dp)
         ) {
             Text(
-                text = "Welcome to LankaMart",
+                text = "Welcome to HM Mart",
                 fontSize = 28.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold

@@ -59,7 +59,7 @@ fun SplashScreen(navController: NavController) {
         ) {
             // Logo
             Image(
-                painter = painterResource(id = R.drawable.logo_hm_mart),
+                painter = painterResource(id = R.mipmap.ic_hm_mart),
                 contentDescription = "HM MART Logo",
                 modifier = Modifier
                     .size(160.dp)
