@@ -22,16 +22,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.lankamart.app.presentation.theme.*
 
 @Composable
-fun GroceryHomeScreen(selectedTabIndex: Int) {
+fun GroceryHomeScreen(selectedTabIndex: Int, navController: NavController) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F9FA)),
-        contentPadding = PaddingValues(bottom = 100.dp)
+        contentPadding = PaddingValues(bottom = 24.dp) // Little extra breathing room at bottom
     ) {
         // --- 1. Immersive Hero Banner ---
         item {
@@ -41,7 +42,7 @@ fun GroceryHomeScreen(selectedTabIndex: Int) {
                     .height(240.dp)
             ) {
                 AsyncImage(
-                    model = "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=800&auto=format&fit=crop", // Resized w=800
+                    model = "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=800&auto=format&fit=crop",
                     contentDescription = "Fresh Vegetables",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -94,7 +95,7 @@ fun GroceryHomeScreen(selectedTabIndex: Int) {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
-                        onClick = {},
+                        onClick = { /* Shop Now Logic */ },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
@@ -126,7 +127,8 @@ fun GroceryHomeScreen(selectedTabIndex: Int) {
                             modifier = Modifier
                                 .size(72.dp)
                                 .clip(CircleShape)
-                                .background(color),
+                                .background(color)
+                                .clickable { },
                             contentAlignment = Alignment.Center
                         ) {
                             AsyncImage(
@@ -162,13 +164,19 @@ fun GroceryHomeScreen(selectedTabIndex: Int) {
                     name = if(rowIndex%2==0) "Red Apple" else "Fresh Milk",
                     price = "$4.99",
                     img = if(rowIndex%2==0) "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400" else "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("product_detail/grocery_$rowIndex")
+                    }
                 )
                 GroceryProductCard(
                     name = if(rowIndex%2==0) "Broccoli" else "Farm Eggs",
                     price = "$2.49",
                     img = if(rowIndex%2==0) "https://images.unsplash.com/photo-1459411621453-7debff8f8432?w=400" else "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=400",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("product_detail/grocery_item_$rowIndex")
+                    }
                 )
             }
         }
@@ -186,15 +194,17 @@ fun SectionHeader(title: String, action: String) {
     ) {
         Text(title, fontFamily = Poppins, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextBlack)
         if(action.isNotEmpty()) {
-            Text(action, fontFamily = Poppins, fontSize = 13.sp, color = DarkTeal, fontWeight = FontWeight.SemiBold)
+            Text(action, fontFamily = Poppins, fontSize = 13.sp, color = DarkTeal, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable {})
         }
     }
 }
 
 @Composable
-fun GroceryProductCard(name: String, price: String, img: String, modifier: Modifier = Modifier) {
+fun GroceryProductCard(name: String, price: String, img: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
-        modifier = modifier.height(220.dp),
+        modifier = modifier
+            .height(220.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

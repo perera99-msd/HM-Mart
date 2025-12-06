@@ -11,10 +11,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import com.lankamart.app.presentation.components.LankaMartBottomBar
 import com.lankamart.app.presentation.components.LankaMartTopBar
-import com.lankamart.app.presentation.navigation.Screen
 import com.lankamart.app.presentation.screens.grocery.GroceryHomeScreen
 import com.lankamart.app.presentation.screens.onlinestore.OnlineStoreHomeScreen
-import kotlinx.coroutines.launch
 
 @Composable
 fun MainHomeScreen(
@@ -23,7 +21,6 @@ fun MainHomeScreen(
 ) {
     var currentBottomRoute by remember { mutableStateOf("home") }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val scope = rememberCoroutineScope()
 
     Scaffold(
         containerColor = Color(0xFFF8F9FA),
@@ -34,15 +31,12 @@ fun MainHomeScreen(
                     selectedTabIndex = selectedTabIndex,
                     onTabSelected = { selectedTabIndex = it },
                     onCartClicked = {
-                        scope.launch {
-                            navController.navigate(Screen.Cart.route)
-                        }
+                        navController.navigate("cart")
                     },
                     onNotificationsClicked = {
-                        scope.launch {
-                            navController.navigate(Screen.Messages.route)
-                        }
-                    }
+                        navController.navigate("messages")
+                    },
+                    navController = navController
                 )
             }
         },
@@ -51,27 +45,19 @@ fun MainHomeScreen(
                 currentRoute = currentBottomRoute,
                 onNavigate = { route ->
                     when (route) {
-                        "home" -> {
-                            currentBottomRoute = "home"
-                        }
-                        "cart" -> {
-                            navController.navigate(Screen.Cart.route)
-                        }
-                        "messages" -> {
-                            navController.navigate(Screen.Messages.route)
-                        }
-                        "offers" -> {
-                            navController.navigate(Screen.Offers.route)
-                        }
-                        "profile" -> {
-                            navController.navigate(Screen.Profile.route)
-                        }
+                        "home" -> currentBottomRoute = "home"
+                        "cart" -> navController.navigate("cart")
+                        "messages" -> navController.navigate("messages")
+                        "offers" -> navController.navigate("offers")
+                        "profile" -> navController.navigate("profile")
                     }
                 },
                 isLoggedIn = true
             )
         }
     ) { paddingValues ->
+        // The paddingValues now contain the height of TopBar + Status Bar
+        // and BottomBar + Navigation Bar.
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -81,16 +67,16 @@ fun MainHomeScreen(
             when (currentBottomRoute) {
                 "home" -> {
                     if (storeType == "grocery") {
-                        GroceryHomeScreen(selectedTabIndex)
+                        GroceryHomeScreen(selectedTabIndex, navController)
                     } else {
-                        OnlineStoreHomeScreen(selectedTabIndex)
+                        OnlineStoreHomeScreen(selectedTabIndex, navController)
                     }
                 }
                 else -> {
                     if (storeType == "grocery") {
-                        GroceryHomeScreen(selectedTabIndex)
+                        GroceryHomeScreen(selectedTabIndex, navController)
                     } else {
-                        OnlineStoreHomeScreen(selectedTabIndex)
+                        OnlineStoreHomeScreen(selectedTabIndex, navController)
                     }
                 }
             }

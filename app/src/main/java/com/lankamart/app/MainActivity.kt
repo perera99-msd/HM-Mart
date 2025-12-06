@@ -1,3 +1,4 @@
+// MainActivity.kt
 package com.lankamart.app
 
 import android.os.Bundle
@@ -14,14 +15,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.lankamart.app.presentation.navigation.Screen
 import com.lankamart.app.presentation.screens.cart.CartScreen
+import com.lankamart.app.presentation.screens.checkout.CheckoutScreen
 import com.lankamart.app.presentation.screens.home.MainHomeScreen
 import com.lankamart.app.presentation.screens.homechoice.HomeChoiceScreen
 import com.lankamart.app.presentation.screens.login.LoginScreen
 import com.lankamart.app.presentation.screens.messages.MessagesScreen
 import com.lankamart.app.presentation.screens.offers.OffersScreen
+import com.lankamart.app.presentation.screens.ordersuccess.OrderSuccessScreen
+import com.lankamart.app.presentation.screens.productdetail.ProductDetailScreen
 import com.lankamart.app.presentation.screens.profile.ProfileScreen
+import com.lankamart.app.presentation.screens.search.SearchScreen
 import com.lankamart.app.presentation.screens.signup.SignupScreen
 import com.lankamart.app.presentation.screens.splash.SplashScreen
 import com.lankamart.app.presentation.theme.LankaMartTheme
@@ -29,9 +33,8 @@ import com.lankamart.app.presentation.theme.LankaMartTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Enable full edge-to-edge layout
         enableEdgeToEdge()
-
-        // Make activity full screen with edge-to-edge
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
@@ -44,31 +47,23 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = Screen.Splash.route
+                        startDestination = "splash"
                     ) {
-                        composable(Screen.Splash.route) {
+                        composable("splash") {
                             SplashScreen(navController = navController)
                         }
-
-                        composable(Screen.HomeChoice.route) {
+                        composable("home_choice") {
                             HomeChoiceScreen(navController = navController)
                         }
-
-                        composable(Screen.Login.route) {
+                        composable("login") {
                             LoginScreen(navController = navController)
                         }
-
-                        composable(Screen.Signup.route) {
+                        composable("signup") {
                             SignupScreen(navController = navController)
                         }
-
                         composable(
-                            route = Screen.MainHome.route,
-                            arguments = listOf(
-                                navArgument("storeType") {
-                                    type = NavType.StringType
-                                }
-                            )
+                            "main_home/{storeType}",
+                            arguments = listOf(navArgument("storeType") { type = NavType.StringType })
                         ) { backStackEntry ->
                             val storeType = backStackEntry.arguments?.getString("storeType") ?: "grocery"
                             MainHomeScreen(
@@ -76,21 +71,36 @@ class MainActivity : ComponentActivity() {
                                 storeType = storeType
                             )
                         }
-
-                        composable(Screen.Cart.route) {
+                        composable("cart") {
                             CartScreen(navController = navController)
                         }
-
-                        composable(Screen.Offers.route) {
+                        composable("offers") {
                             OffersScreen(navController = navController)
                         }
-
-                        composable(Screen.Messages.route) {
+                        composable("messages") {
                             MessagesScreen(navController = navController)
                         }
-
-                        composable(Screen.Profile.route) {
+                        composable("profile") {
                             ProfileScreen(navController = navController)
+                        }
+                        composable(
+                            "product_detail/{productId}",
+                            arguments = listOf(navArgument("productId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val productId = backStackEntry.arguments?.getString("productId") ?: ""
+                            ProductDetailScreen(
+                                navController = navController,
+                                productId = productId
+                            )
+                        }
+                        composable("checkout") {
+                            CheckoutScreen(navController = navController)
+                        }
+                        composable("order_success") {
+                            OrderSuccessScreen(navController = navController)
+                        }
+                        composable("search") {
+                            SearchScreen(navController = navController)
                         }
                     }
                 }

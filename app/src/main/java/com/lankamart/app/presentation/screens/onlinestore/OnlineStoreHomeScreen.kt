@@ -21,16 +21,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.lankamart.app.presentation.theme.*
 
 @Composable
-fun OnlineStoreHomeScreen(selectedTabIndex: Int) {
+fun OnlineStoreHomeScreen(selectedTabIndex: Int, navController: NavController) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFAFAFA)),
-        contentPadding = PaddingValues(bottom = 100.dp)
+        contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         // --- 1. Premium Hero Slider ---
         item {
@@ -38,13 +39,14 @@ fun OnlineStoreHomeScreen(selectedTabIndex: Int) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .clickable { /* Handle Banner Click */ },
                 shape = RoundedCornerShape(24.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     AsyncImage(
-                        model = "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800", // Resized
+                        model = "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800",
                         contentDescription = "Fashion",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -109,7 +111,7 @@ fun OnlineStoreHomeScreen(selectedTabIndex: Int) {
                             shape = RoundedCornerShape(16.dp),
                             color = Color.White,
                             shadowElevation = 2.dp,
-                            modifier = Modifier.size(70.dp)
+                            modifier = Modifier.size(70.dp).clickable { /* Filter brand */ }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(name.take(1), fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color.Black)
@@ -132,7 +134,7 @@ fun OnlineStoreHomeScreen(selectedTabIndex: Int) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Trending Now", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text("See All", color = DarkTeal, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text("See All", color = DarkTeal, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable {})
             }
         }
 
@@ -147,13 +149,19 @@ fun OnlineStoreHomeScreen(selectedTabIndex: Int) {
                     name = if(rowIndex%2==0) "Sony Headphone" else "MacBook Air",
                     price = if(rowIndex%2==0) "$299" else "$999",
                     img = if(rowIndex%2==0) "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400" else "https://images.unsplash.com/photo-1517336714731-489689fd1ca4?w=400",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("product_detail/tech_$rowIndex")
+                    }
                 )
                 TechProductCard(
                     name = if(rowIndex%2==0) "Smart Watch" else "Nike Air Max",
                     price = if(rowIndex%2==0) "$199" else "$129",
                     img = if(rowIndex%2==0) "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400" else "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate("product_detail/tech_item_$rowIndex")
+                    }
                 )
             }
         }
@@ -161,9 +169,11 @@ fun OnlineStoreHomeScreen(selectedTabIndex: Int) {
 }
 
 @Composable
-fun TechProductCard(name: String, price: String, img: String, modifier: Modifier = Modifier) {
+fun TechProductCard(name: String, price: String, img: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
-        modifier = modifier.height(260.dp),
+        modifier = modifier
+            .height(260.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -218,7 +228,7 @@ fun TechProductCard(name: String, price: String, img: String, modifier: Modifier
                     Surface(
                         shape = CircleShape,
                         color = Color.Black,
-                        modifier = Modifier.size(32.dp).clickable { }
+                        modifier = Modifier.size(32.dp).clickable { onClick() }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(Icons.Default.ArrowForward, null, tint = Color.White, modifier = Modifier.size(16.dp))
