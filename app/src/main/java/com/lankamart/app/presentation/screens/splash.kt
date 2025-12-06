@@ -1,5 +1,3 @@
-
-
 package com.lankamart.app.presentation.screens.splash
 
 import androidx.compose.animation.core.Animatable
@@ -12,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -27,79 +26,53 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(navController: NavController) {
-    var startAnimation by remember { mutableStateOf(false) }
+
     val alphaAnim = remember { Animatable(0f) }
 
-    LaunchedEffect(key1 = true) {
-        startAnimation = true
+    LaunchedEffect(Unit) {
         alphaAnim.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 1500)
+            animationSpec = tween(1500)
         )
         delay(2000)
-        navController.navigate(Screen.Login.route) {
-            popUpTo(Screen.Splash.route) {
-                inclusive = true
-            }
+
+        // Navigate to Home Choice Screen
+        navController.navigate(Screen.HomeChoice.route) {
+            popUpTo(Screen.Splash.route) { inclusive = true }
         }
     }
 
+    // Gradient background
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkTeal),
+            .background(
+                Brush.verticalGradient(
+                    listOf(DarkTeal, Color(0xFF003D3A))
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo - Using a placeholder, will be replaced with actual logo image
-            Box(
+            // Logo
+            Image(
+                painter = painterResource(id = R.mipmap.ic_hm_mart),
+                contentDescription = "HM MART Logo",
                 modifier = Modifier
-                    .size(140.dp)
+                    .size(160.dp)
                     .alpha(alphaAnim.value),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo_hm_mart),
-                    contentDescription = "HM MART Logo",
-                    modifier = Modifier.size(140.dp).alpha(alphaAnim.value),
-                    contentScale = ContentScale.Fit
-                )
-                // For now using a simple text logo
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .background(Color.White, shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp))
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "HM",
-                            color = DarkTeal,
-                            fontSize = 36.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "MART",
-                            color = SageGreen,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
+                contentScale = ContentScale.Fit
+            )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "HM MART",
                 color = Color.White,
-                fontSize = 32.sp,
+                fontSize = 34.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.alpha(alphaAnim.value)
             )
