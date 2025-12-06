@@ -1,67 +1,122 @@
 package com.lankamart.app.presentation.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.lankamart.app.presentation.theme.DarkTeal
-import com.lankamart.app.presentation.theme.SageGreen
-import com.lankamart.app.presentation.theme.TextDarkGrey
-
-// 1. Define the Navigation Items
-sealed class BottomNavItem(val route: String, val label: String, val activeIcon: ImageVector, val inactiveIcon: ImageVector) {
-    object Home : BottomNavItem("home", "Home", Icons.Filled.Home, Icons.Outlined.Home)
-    object Cart : BottomNavItem("cart", "Cart", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart)
-    object Profile : BottomNavItem("profile", "Profile", Icons.Filled.Person, Icons.Outlined.Person)
-}
+import com.lankamart.app.presentation.theme.Poppins
 
 @Composable
 fun LankaMartBottomBar(
-    currentRoute: String?,
-    onNavigate: (String) -> Unit
+    currentRoute: String,
+    onNavigate: (String) -> Unit,
+    isLoggedIn: Boolean
 ) {
-    val items = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.Cart,
-        BottomNavItem.Profile
-    )
-
-    NavigationBar(
-        containerColor = androidx.compose.ui.graphics.Color.White,
-        contentColor = DarkTeal
+    Surface(
+        color = Color.White,
+        shadowElevation = 10.dp, // Subtle shadow
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.navigationBars) // Prevents overlap with system nav
     ) {
-        items.forEach { item ->
-            val isSelected = currentRoute == item.route
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp) // Fixed height for a thinner, premium look
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BottomNavItem(
+                icon = if(currentRoute == "home") Icons.Filled.Home else Icons.Outlined.Home,
+                label = "Home",
+                isSelected = currentRoute == "home",
+                onClick = { onNavigate("home") }
+            )
+            BottomNavItem(
+                icon = if(currentRoute == "offers") Icons.Filled.LocalOffer else Icons.Outlined.LocalOffer,
+                label = "Offers",
+                isSelected = currentRoute == "offers",
+                onClick = { onNavigate("offers") }
+            )
 
-            NavigationBarItem(
-                selected = isSelected,
-                onClick = { onNavigate(item.route) },
-                label = {
-                    Text(
-                        text = item.label,
-                        color = if (isSelected) DarkTeal else TextDarkGrey
-                    )
-                },
-                icon = {
-                    Icon(
-                        imageVector = if (isSelected) item.activeIcon else item.inactiveIcon,
-                        contentDescription = item.label,
-                        tint = if (isSelected) DarkTeal else TextDarkGrey
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = SageGreen.copy(alpha = 0.2f) // Subtle selection background
+            // Center Cart Button - INLINE (Same Level)
+            Box(
+                modifier = Modifier
+                    .size(48.dp) // Compact circle
+                    .clip(CircleShape)
+                    .background(DarkTeal)
+                    .clickable { onNavigate("cart") },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ShoppingCart,
+                    contentDescription = "Cart",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
                 )
+            }
+
+            BottomNavItem(
+                icon = if(currentRoute == "messages") Icons.Filled.Mail else Icons.Outlined.Mail,
+                label = "Inbox",
+                isSelected = currentRoute == "messages",
+                onClick = { onNavigate("messages") }
+            )
+            BottomNavItem(
+                icon = if(currentRoute == "profile") Icons.Filled.Person else Icons.Outlined.Person,
+                label = "Profile",
+                isSelected = currentRoute == "profile",
+                onClick = { onNavigate("profile") }
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomNavItem(
+    icon: ImageVector,
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(8.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = if (isSelected) DarkTeal else Color.Gray,
+            modifier = Modifier.size(24.dp) // Slightly smaller icon
+        )
+        // Only show text if selected to keep it clean and thin
+        if (isSelected) {
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                fontFamily = Poppins,
+                color = DarkTeal,
+                modifier = Modifier.padding(top = 2.dp)
             )
         }
     }

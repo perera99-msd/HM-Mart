@@ -1,63 +1,98 @@
 package com.lankamart.app.presentation.screens.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import com.lankamart.app.presentation.components.LankaMartBottomBar
 import com.lankamart.app.presentation.components.LankaMartTopBar
+import com.lankamart.app.presentation.navigation.Screen
+import com.lankamart.app.presentation.screens.grocery.GroceryHomeScreen
+import com.lankamart.app.presentation.screens.onlinestore.OnlineStoreHomeScreen
+import kotlinx.coroutines.launch
 
 @Composable
-fun MainHomeScreen(navController: NavController) {
-    // State to manage which Bottom Nav item is selected
-    var currentRoute by remember { mutableStateOf("home") }
-
-    // State to manage the Top Tab (0 = Online Store, 1 = Grocery Store)
+fun MainHomeScreen(
+    navController: NavController,
+    storeType: String
+) {
+    var currentBottomRoute by remember { mutableStateOf("home") }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
+        containerColor = Color(0xFFF8F9FA),
         topBar = {
-            // Only show Top Bar if we are on the 'Home' tab of bottom nav
-            if (currentRoute == "home") {
+            if (currentBottomRoute == "home") {
                 LankaMartTopBar(
+                    storeType = storeType,
                     selectedTabIndex = selectedTabIndex,
-                    onTabSelected = { index -> selectedTabIndex = index }
+                    onTabSelected = { selectedTabIndex = it },
+                    onCartClicked = {
+                        scope.launch {
+                            navController.navigate(Screen.Cart.route)
+                        }
+                    },
+                    onNotificationsClicked = {
+                        scope.launch {
+                            navController.navigate(Screen.Messages.route)
+                        }
+                    }
                 )
             }
         },
         bottomBar = {
             LankaMartBottomBar(
-                currentRoute = currentRoute,
+                currentRoute = currentBottomRoute,
                 onNavigate = { route ->
-                    currentRoute = route
-                    // You can also navigate using navController if needed
-                }
+                    when (route) {
+                        "home" -> {
+                            currentBottomRoute = "home"
+                        }
+                        "cart" -> {
+                            navController.navigate(Screen.Cart.route)
+                        }
+                        "messages" -> {
+                            navController.navigate(Screen.Messages.route)
+                        }
+                        "offers" -> {
+                            navController.navigate(Screen.Offers.route)
+                        }
+                        "profile" -> {
+                            navController.navigate(Screen.Profile.route)
+                        }
+                    }
+                },
+                isLoggedIn = true
             )
         }
     ) { paddingValues ->
-        // The main content area
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+                .background(Color(0xFFF8F9FA))
+                .padding(paddingValues)
         ) {
-            // Placeholder content based on selection
-            when (currentRoute) {
+            when (currentBottomRoute) {
                 "home" -> {
-                    if (selectedTabIndex == 0) {
-                        Text("Online Store Content Goes Here")
+                    if (storeType == "grocery") {
+                        GroceryHomeScreen(selectedTabIndex)
                     } else {
-                        Text("Grocery Store Content Goes Here")
+                        OnlineStoreHomeScreen(selectedTabIndex)
                     }
                 }
-                "cart" -> Text("Shopping Cart Screen")
-                "profile" -> Text("User Profile Screen")
+                else -> {
+                    if (storeType == "grocery") {
+                        GroceryHomeScreen(selectedTabIndex)
+                    } else {
+                        OnlineStoreHomeScreen(selectedTabIndex)
+                    }
+                }
             }
         }
     }
