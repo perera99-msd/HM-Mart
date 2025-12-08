@@ -1,212 +1,228 @@
 package com.lankamart.app.presentation.screens.signup
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.lankamart.app.R
 import com.lankamart.app.presentation.navigation.Screen
-import com.lankamart.app.presentation.theme.DarkTeal
-import com.lankamart.app.presentation.theme.Poppins
-import com.lankamart.app.presentation.theme.SageGreen
+import com.lankamart.app.data.remote.ApiClient
+import com.lankamart.app.data.remote.SignupRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignupScreen(navController: NavController) {
+
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var countryCode by remember { mutableStateOf("+94") }
+    var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPassword by remember { mutableStateOf("") }
 
-    Box(
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmVisible by remember { mutableStateOf(false) }
+
+    var errorMessage by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+    val countryList = listOf("+94", "+91", "+1", "+44", "+61")
+
+    // -------- Strong password check function --------
+    fun isStrongPassword(pwd: String): Boolean {
+        val regex = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#\$%^&+=!]).{8,}$")
+        return regex.matches(pwd)
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F9FA))
+            .padding(20.dp)
+            .background(Color.White)
+            .padding(top = 40.dp)
     ) {
-        // --- Header ---
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(260.dp)
-                .clip(RoundedCornerShape(bottomStart = 60.dp, bottomEnd = 60.dp))
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(DarkTeal, Color(0xFF004D40))
-                    )
-                )
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.05f), Color.Transparent),
-                            radius = 600f
-                        )
-                    )
-            )
 
-            Column(
-                modifier = Modifier.padding(top = 50.dp, start = 28.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                // Back Button
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+        Text("Create Account", fontSize = 28.sp, color = Color.Black)
+        Spacer(Modifier.height(20.dp))
+
+        // ---------------- Full Name ----------------
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Full Name") }
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        // ---------------- Email ----------------
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Email") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        // ---------------- Country + Phone ----------------
+        Row {
+
+            var expanded by remember { mutableStateOf(false) }
+
+            Box {
+                OutlinedButton(
+                    onClick = { expanded = true },
+                    modifier = Modifier.width(100.dp)
                 ) {
-                    Icon(Icons.Default.ArrowBack, null, tint = Color.White)
+                    Text(countryCode)
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Create Account",
-                    fontFamily = Poppins,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 30.sp,
-                    color = Color.White
-                )
-                Text(
-                    text = "Join us for a premium experience",
-                    fontFamily = Poppins,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.8f)
-                )
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    countryList.forEach { code ->
+                        DropdownMenuItem(
+                            text = { Text(code) },
+                            onClick = {
+                                countryCode = code
+                                expanded = false
+                            }
+                        )
+                    }
+                }
             }
+
+            Spacer(Modifier.width(10.dp))
+
+            OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                modifier = Modifier.weight(1f),
+                label = { Text("Contact Number") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
         }
 
-        // --- Form ---
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 180.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                shape = RoundedCornerShape(26.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .verticalScroll(rememberScrollState()), // Allow scrolling for small screens
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+        Spacer(Modifier.height(12.dp))
 
-                    // Name
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Full Name", fontSize = 14.sp, fontFamily = Poppins) },
-                        leadingIcon = { Icon(Icons.Default.Person, null, tint = DarkTeal) },
-                        shape = RoundedCornerShape(14.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = DarkTeal, unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedLabelColor = DarkTeal, focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+        // ---------------- Password ----------------
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Password") },
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Text(if (passwordVisible) "Hide" else "Show")
+                }
+            }
+        )
+
+        // Password hint
+        if (password.isNotEmpty() && !isStrongPassword(password)) {
+            Text(
+                "Password must be at least 8 characters, with uppercase, lowercase, number & symbol.",
+                color = Color.Red,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // ---------------- Confirm Password ----------------
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Confirm Password") },
+            visualTransformation = if (confirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { confirmVisible = !confirmVisible }) {
+                    Text(if (confirmVisible) "Hide" else "Show")
+                }
+            }
+        )
+
+        Spacer(Modifier.height(20.dp))
+
+        if (errorMessage.isNotEmpty()) {
+            Text(errorMessage, color = Color.Red)
+            Spacer(Modifier.height(10.dp))
+        }
+
+        // ---------------- Signup Button ----------------
+        Button(
+            onClick = {
+
+                if (!isStrongPassword(password)) {
+                    errorMessage = "Please use a strong password!"
+                    return@Button
+                }
+
+                if (password != confirmPassword) {
+                    errorMessage = "Passwords do not match!"
+                    return@Button
+                }
+
+                loading = true
+                errorMessage = ""
+
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val response = ApiClient.signupApi.registerUser(
+                            SignupRequest(
+                                name = name,
+                                email = email,
+                                country_code = countryCode,
+                                phone = phone,
+                                password = password
+                            )
                         )
-                    )
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Email
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Email Address", fontSize = 14.sp, fontFamily = Poppins) },
-                        leadingIcon = { Icon(Icons.Default.Email, null, tint = DarkTeal) },
-                        shape = RoundedCornerShape(14.dp),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = DarkTeal, unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedLabelColor = DarkTeal, focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Password
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Password", fontSize = 14.sp, fontFamily = Poppins) },
-                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = DarkTeal) },
-                        trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null, tint = Color.Gray)
+                        launch(Dispatchers.Main) {
+                            loading = false
+                            if (response.status == "success") {
+                                navController.navigate(Screen.Login.route) {
+                                    popUpTo(Screen.Signup.route) { inclusive = true }
+                                }
+                            } else {
+                                errorMessage = response.message
                             }
-                        },
-                        shape = RoundedCornerShape(14.dp),
-                        singleLine = true,
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = DarkTeal, unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedLabelColor = DarkTeal, focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
-                        )
-                    )
+                        }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Signup Button
-                    Button(
-                        onClick = { navController.navigate(Screen.HomeChoice.route) },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = DarkTeal),
-                        shape = RoundedCornerShape(14.dp),
-                        elevation = ButtonDefaults.buttonElevation(6.dp)
-                    ) {
-                        Text("SIGN UP", fontFamily = Poppins, fontWeight = FontWeight.Bold, fontSize = 16.sp, letterSpacing = 1.sp)
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Footer
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Already have an account? ", color = Color.Gray, fontFamily = Poppins, fontSize = 14.sp)
-                        Text(
-                            "Sign In",
-                            color = DarkTeal,
-                            fontFamily = Poppins,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            modifier = Modifier.clickable { navController.popBackStack() }
-                        )
+                    } catch (e: Exception) {
+                        launch(Dispatchers.Main) {
+                            loading = false
+                            errorMessage = "Unable to connect to server!"
+                        }
                     }
                 }
+
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp)
+        ) {
+            if (loading) {
+                CircularProgressIndicator(color = Color.White)
+            } else {
+                Text("SIGN UP")
             }
         }
     }
