@@ -39,7 +39,7 @@ import com.lankamart.app.presentation.utils.systemUIPadding
 import kotlinx.coroutines.delay
 
 @Composable
-fun HomeChoiceScreen(navController: NavController) {
+fun HomeChoiceScreen(navController: NavController, userId: Int = -1, fullName: String = "") {
     var isVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -57,7 +57,7 @@ fun HomeChoiceScreen(navController: NavController) {
             )
             .systemUIPadding()
     ) {
-        // Decorative background elements
+        // Decorative background
         Box(
             modifier = Modifier
                 .offset(x = (-100).dp, y = (-100).dp)
@@ -85,7 +85,6 @@ fun HomeChoiceScreen(navController: NavController) {
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
-            // --- 1. Real Logo Section ---
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn(tween(800)) + slideInVertically(tween(800)) { -40 }
@@ -109,14 +108,13 @@ fun HomeChoiceScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- 2. Welcome Text ---
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn(tween(800, delayMillis = 200))
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Choose Experience",
+                        text = "Welcome${if (fullName.isNotEmpty()) ", $fullName" else ""} to HM Mart",
                         fontFamily = Poppins,
                         fontWeight = FontWeight.Bold,
                         fontSize = 28.sp,
@@ -137,9 +135,7 @@ fun HomeChoiceScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(50.dp))
 
-            // --- 3. Selection Cards ---
-
-            // Grocery Card
+            // --- Choice Cards ---
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn(tween(800, delayMillis = 400)) + slideInVertically(tween(800, delayMillis = 400)) { 100 }
@@ -156,7 +152,6 @@ fun HomeChoiceScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Online Store Card
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn(tween(800, delayMillis = 600)) + slideInVertically(tween(800, delayMillis = 600)) { 100 }
@@ -198,12 +193,14 @@ fun ChoiceCard(
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 0.08f)
         ),
-        border = BorderStroke(1.dp, Brush.horizontalGradient(
-            colors = listOf(
-                accentColor.copy(alpha = 0.5f),
-                Color.Transparent
+        border = BorderStroke(
+            1.dp, Brush.horizontalGradient(
+                colors = listOf(
+                    accentColor.copy(alpha = 0.5f),
+                    Color.Transparent
+                )
             )
-        ))
+        )
     ) {
         Box(
             modifier = Modifier.fillMaxSize()
@@ -226,7 +223,6 @@ fun ChoiceCard(
                     .padding(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icon Container
                 Box(
                     modifier = Modifier
                         .size(64.dp)
@@ -244,7 +240,6 @@ fun ChoiceCard(
 
                 Spacer(modifier = Modifier.width(20.dp))
 
-                // Text Content
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
@@ -266,7 +261,6 @@ fun ChoiceCard(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Go Button
                 Surface(
                     shape = CircleShape,
                     color = accentColor,

@@ -1,5 +1,8 @@
 package com.lankamart.app.presentation.screens.signup
 
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -7,21 +10,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.lankamart.app.presentation.navigation.Screen
 import com.lankamart.app.data.remote.ApiClient
 import com.lankamart.app.data.remote.SignupRequest
+import com.lankamart.app.presentation.navigation.Screen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignupScreen(navController: NavController) {
+
+    val context = LocalContext.current
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -39,7 +45,6 @@ fun SignupScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     val countryList = listOf("+94", "+91", "+1", "+44", "+61")
 
-    // -------- Strong password check function --------
     fun isStrongPassword(pwd: String): Boolean {
         val regex = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#\$%^&+=!]).{8,}$")
         return regex.matches(pwd)
@@ -52,21 +57,17 @@ fun SignupScreen(navController: NavController) {
             .background(Color.White)
             .padding(top = 40.dp)
     ) {
-
         Text("Create Account", fontSize = 28.sp, color = Color.Black)
         Spacer(Modifier.height(20.dp))
 
-        // ---------------- Full Name ----------------
+        // Form Fields
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Full Name") }
         )
-
         Spacer(Modifier.height(12.dp))
-
-        // ---------------- Email ----------------
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -74,22 +75,15 @@ fun SignupScreen(navController: NavController) {
             label = { Text("Email") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )
-
         Spacer(Modifier.height(12.dp))
 
-        // ---------------- Country + Phone ----------------
         Row {
-
             var expanded by remember { mutableStateOf(false) }
-
             Box {
                 OutlinedButton(
                     onClick = { expanded = true },
                     modifier = Modifier.width(100.dp)
-                ) {
-                    Text(countryCode)
-                }
-
+                ) { Text(countryCode) }
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
@@ -105,9 +99,7 @@ fun SignupScreen(navController: NavController) {
                     }
                 }
             }
-
             Spacer(Modifier.width(10.dp))
-
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
@@ -119,7 +111,6 @@ fun SignupScreen(navController: NavController) {
 
         Spacer(Modifier.height(12.dp))
 
-        // ---------------- Password ----------------
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -133,7 +124,6 @@ fun SignupScreen(navController: NavController) {
             }
         )
 
-        // Password hint
         if (password.isNotEmpty() && !isStrongPassword(password)) {
             Text(
                 "Password must be at least 8 characters, with uppercase, lowercase, number & symbol.",
@@ -145,7 +135,6 @@ fun SignupScreen(navController: NavController) {
 
         Spacer(Modifier.height(12.dp))
 
-        // ---------------- Confirm Password ----------------
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -166,15 +155,13 @@ fun SignupScreen(navController: NavController) {
             Spacer(Modifier.height(10.dp))
         }
 
-        // ---------------- Signup Button ----------------
+        // Signup Button
         Button(
             onClick = {
-
                 if (!isStrongPassword(password)) {
                     errorMessage = "Please use a strong password!"
                     return@Button
                 }
-
                 if (password != confirmPassword) {
                     errorMessage = "Passwords do not match!"
                     return@Button
@@ -193,37 +180,62 @@ fun SignupScreen(navController: NavController) {
                                 phone = phone,
                                 password = password
                             )
-                        )
+                        ).execute()
 
                         launch(Dispatchers.Main) {
                             loading = false
-                            if (response.status == "success") {
-                                navController.navigate(Screen.Login.route) {
-                                    popUpTo(Screen.Signup.route) { inclusive = true }
+                            val body = response.body()
+                            if (body != null) {
+                                if (body.status == "success") {
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(Screen.Signup.route) { inclusive = true }
+                                    }
+                                } else {
+                                    errorMessage = body.message
                                 }
-                            } else {
-                                errorMessage = response.message
-                            }
+                            } else errorMessage = "Server returned empty response"
                         }
-
                     } catch (e: Exception) {
                         launch(Dispatchers.Main) {
                             loading = false
                             errorMessage = "Unable to connect to server!"
                         }
+                        Log.e("SignupError", e.message.toString())
                     }
                 }
-
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp)
         ) {
-            if (loading) {
-                CircularProgressIndicator(color = Color.White)
-            } else {
-                Text("SIGN UP")
-            }
+            if (loading) CircularProgressIndicator(color = Color.White)
+            else Text("SIGN UP")
         }
+
+        Spacer(Modifier.height(20.dp))
+
+        // Google Login via Web URL
+        Button(
+            onClick = {
+                val googleUrl = "https://yourdomain.com/google_login.php"
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(googleUrl))
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(Color(0xFF4285F4)),
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Sign up with Google", color = Color.White) }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Facebook Login via Web URL
+        Button(
+            onClick = {
+                val fbUrl = "https://yourdomain.com/facebook_login.php"
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(fbUrl))
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(Color(0xFF1877F2)),
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Sign up with Facebook", color = Color.White) }
     }
 }

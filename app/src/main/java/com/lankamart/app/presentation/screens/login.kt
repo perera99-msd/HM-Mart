@@ -1,5 +1,6 @@
 package com.lankamart.app.presentation.screens.login
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -7,11 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -34,15 +32,28 @@ import com.lankamart.app.presentation.theme.DarkTeal
 import com.lankamart.app.presentation.theme.Poppins
 import com.lankamart.app.presentation.theme.SageGreen
 import com.lankamart.app.presentation.utils.systemUIPadding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController) {
+    val context = LocalContext.current
+
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var loginMethod by remember { mutableStateOf("email") }
+
+    var loading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -50,7 +61,7 @@ fun LoginScreen(navController: NavController) {
             .background(Color(0xFFF8F9FA))
             .systemUIPadding()
     ) {
-        // --- 1. Premium Header ---
+        // --- Header ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -62,7 +73,6 @@ fun LoginScreen(navController: NavController) {
                     )
                 )
         ) {
-            // Subtle Radial Glow
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -73,14 +83,10 @@ fun LoginScreen(navController: NavController) {
                         )
                     )
             )
-
-            // Header Content
             Column(
-                modifier = Modifier
-                    .padding(top = 50.dp, start = 28.dp),
+                modifier = Modifier.padding(top = 50.dp, start = 28.dp),
                 verticalArrangement = Arrangement.Center
             ) {
-                // Logo Row
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
@@ -106,9 +112,7 @@ fun LoginScreen(navController: NavController) {
                         letterSpacing = 1.sp
                     )
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Text(
                     text = "Welcome Back",
                     fontFamily = Poppins,
@@ -126,14 +130,13 @@ fun LoginScreen(navController: NavController) {
             }
         }
 
-        // --- 2. Main Content ---
+        // --- Main Content ---
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 150.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // --- LOGIN CARD ---
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -146,260 +149,265 @@ fun LoginScreen(navController: NavController) {
                     modifier = Modifier.padding(28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Method Toggle
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF5F5F5))
-                            .padding(4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.5f)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Brush.horizontalGradient(listOf(DarkTeal, SageGreen)))
-                                .align(if (loginMethod == "email") Alignment.CenterStart else Alignment.CenterEnd)
-                        )
-                        Row(modifier = Modifier.fillMaxSize()) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .clickable { loginMethod = "email" },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "Email",
-                                    fontFamily = Poppins,
-                                    fontWeight = if (loginMethod == "email") FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 14.sp,
-                                    color = if (loginMethod == "email") Color.White else Color.Gray
-                                )
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .clickable { loginMethod = "phone" },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "Phone",
-                                    fontFamily = Poppins,
-                                    fontWeight = if (loginMethod == "phone") FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 14.sp,
-                                    color = if (loginMethod == "phone") Color.White else Color.Gray
-                                )
-                            }
-                        }
-                    }
-
+                    // Login Method Toggle
+                    LoginMethodToggle(loginMethod) { loginMethod = it }
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Inputs
-                    if (loginMethod == "email") {
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Email Address", fontSize = 14.sp) },
-                            leadingIcon = { Icon(Icons.Default.Email, null, tint = DarkTeal) },
-                            shape = RoundedCornerShape(14.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = DarkTeal,
-                                unfocusedBorderColor = Color(0xFFE0E0E0),
-                                focusedLabelColor = DarkTeal,
-                                focusedTextColor = Color.Black,
-                                unfocusedTextColor = Color.Black
-                            ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-                        )
-                    } else {
-                        OutlinedTextField(
-                            value = phone,
-                            onValueChange = {
-                                // Only allow digits, +, and spaces
-                                if (it.length <= 15 && it.all { char ->
-                                        char.isDigit() || char == '+' || char == ' ' || char == '(' || char == ')' || char == '-'
-                                    }) {
-                                    phone = it
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Phone Number", fontSize = 14.sp) },
-                            leadingIcon = { Icon(Icons.Default.Phone, null, tint = DarkTeal) },
-                            shape = RoundedCornerShape(14.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = DarkTeal,
-                                unfocusedBorderColor = Color(0xFFE0E0E0),
-                                focusedLabelColor = DarkTeal,
-                                focusedTextColor = Color.Black,
-                                unfocusedTextColor = Color.Black
-                            ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                            placeholder = { Text("+94 77 123 4567", color = Color.Gray.copy(alpha = 0.6f)) }
-                        )
-                    }
+                    val identifier = if (loginMethod == "email") email else phone
+                    LoginTextField(
+                        value = identifier,
+                        onValueChange = {
+                            if (loginMethod == "email") email = it
+                            else phone = it.filter { char -> char.isDigit() }
+                        },
+                        label = if (loginMethod == "email") "Email Address" else "Phone Number",
+                        leadingIcon = if (loginMethod == "email") Icons.Default.Email else Icons.Default.Phone,
+                        keyboardType = if (loginMethod == "email") KeyboardType.Email else KeyboardType.Number
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    OutlinedTextField(
+                    LoginTextField(
                         value = password,
                         onValueChange = { password = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Password", fontSize = 14.sp) },
-                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = DarkTeal) },
-                        trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(
-                                    if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    null,
-                                    tint = Color.Gray
-                                )
-                            }
-                        },
-                        shape = RoundedCornerShape(14.dp),
-                        singleLine = true,
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = DarkTeal,
-                            unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedLabelColor = DarkTeal,
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black
-                        )
+                        label = "Password",
+                        leadingIcon = Icons.Default.Lock,
+                        keyboardType = KeyboardType.Password,
+                        isPassword = true,
+                        passwordVisible = passwordVisible,
+                        onVisibilityChange = { passwordVisible = it }
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Forgot Password
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "Forgot Password?",
-                            color = DarkTeal,
-                            fontFamily = Poppins,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { /* TODO */ }
-                                .padding(8.dp)
-                        )
-                    }
+                    Text(
+                        text = "Forgot Password?",
+                        color = DarkTeal,
+                        fontFamily = Poppins,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                        modifier = Modifier
+                            .clickable { /* TODO: Forgot Password */ }
+                            .padding(8.dp)
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Sign In Button
+                    // SIGN IN BUTTON
                     Button(
                         onClick = {
-                            navController.navigate(Screen.HomeChoice.route) {
-                                popUpTo(Screen.Login.route) { inclusive = true }
+                            val idTrim = identifier.trim()
+                            val pwTrim = password.trim()
+
+                            if (idTrim.isEmpty() || pwTrim.isEmpty()) {
+                                errorMessage = "Please fill all fields"
+                                return@Button
+                            }
+
+                            scope.launch(Dispatchers.IO) {
+                                loading = true
+                                errorMessage = ""
+
+                                try {
+                                    val url = URL("https://hmmart.cpsharetxt.com/login.php")
+                                    val conn = url.openConnection() as HttpURLConnection
+                                    conn.requestMethod = "POST"
+                                    conn.setRequestProperty("Content-Type", "application/json")
+                                    conn.doOutput = true
+
+                                    val json = JSONObject().apply {
+                                        put("identifier", idTrim)
+                                        put("password", pwTrim)
+                                    }
+
+                                    OutputStreamWriter(conn.outputStream).use {
+                                        it.write(json.toString())
+                                    }
+
+                                    val response = conn.inputStream.bufferedReader().readText()
+                                    val obj = JSONObject(response)
+
+                                    launch(Dispatchers.Main) {
+                                        loading = false
+
+                                        if (obj.getString("status") == "success") {
+                                            val userId = obj.getInt("user_id")
+                                            val fullName = obj.getString("full_name")
+
+                                            navController.navigate("home_choice/$userId/$fullName") {
+                                                popUpTo("login") { inclusive = true }
+                                            }
+
+                                        } else {
+                                            errorMessage = obj.getString("message")
+                                        }
+                                    }
+
+                                } catch (e: Exception) {
+                                    launch(Dispatchers.Main) {
+                                        loading = false
+                                        errorMessage = "Login failed. Please try again."
+                                    }
+                                    Log.e("LOGIN_ERROR", e.toString())
+                                }
                             }
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = DarkTeal),
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(14.dp),
-                        elevation = ButtonDefaults.buttonElevation(6.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = DarkTeal)
                     ) {
                         Text(
                             "SIGN IN",
                             fontFamily = Poppins,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            letterSpacing = 1.sp
+                            fontSize = 16.sp
                         )
+                    }
+
+                    if (loading) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+
+                    if (errorMessage.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(errorMessage, color = Color.Red, fontSize = 12.sp)
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Socials
+                    // --- Social Buttons ---
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        SocialButton(R.drawable.ic_google, "Google", Modifier.weight(1f))
-                        SocialButton(R.drawable.ic_facebook, "Facebook", Modifier.weight(1f))
+                        SocialButton(R.drawable.ic_google, "Google") { /* TODO */ }
+                        SocialButton(R.drawable.ic_facebook, "Facebook") { /* TODO */ }
                     }
                 }
             }
 
-            // --- 3. FOOTER SECTION ---
             Spacer(modifier = Modifier.height(32.dp))
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Sign Up
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "Don't have an account? ",
-                        color = Color.Gray,
-                        fontFamily = Poppins,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        "Sign Up",
-                        color = DarkTeal,
-                        fontFamily = Poppins,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        modifier = Modifier.clickable {
-                            navController.navigate(Screen.Signup.route)
-                        }
-                    )
-                }
-
-                // Guest Button
-                Surface(
-                    onClick = {
-                        navController.navigate(Screen.HomeChoice.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
-                        }
-                    },
-                    shape = RoundedCornerShape(50),
-                    color = Color(0xFFE0F2F1)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Continue as Guest",
-                            color = DarkTeal,
-                            fontFamily = Poppins,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            Icons.Outlined.ArrowForward,
-                            null,
-                            tint = DarkTeal,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(40.dp))
+            FooterSection(navController)
         }
     }
 }
 
+// --- Other Composables (unchanged) ---
+
+
+// --- Other Composables (LoginMethodToggle, LoginTextField, SocialButton, FooterSection) ---
+// Keep the code exactly as in your original file
+
+// --- Login Toggle ---
 @Composable
-fun SocialButton(iconRes: Int, text: String, modifier: Modifier = Modifier) {
+fun LoginMethodToggle(selected: String, onSelect: (String) -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFFF5F5F5))
+            .padding(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(10.dp))
+                .background(Brush.horizontalGradient(listOf(DarkTeal, SageGreen)))
+                .align(if (selected == "email") Alignment.CenterStart else Alignment.CenterEnd)
+        )
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable { onSelect("email") },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Email",
+                    fontFamily = Poppins,
+                    fontWeight = if (selected == "email") FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 14.sp,
+                    color = if (selected == "email") Color.White else Color.Gray
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable { onSelect("phone") },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Phone",
+                    fontFamily = Poppins,
+                    fontWeight = if (selected == "phone") FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 14.sp,
+                    color = if (selected == "phone") Color.White else Color.Gray
+                )
+            }
+        }
+    }
+}
+
+// --- Login TextField ---
+@Composable
+fun LoginTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    keyboardType: KeyboardType,
+    isPassword: Boolean = false,
+    passwordVisible: Boolean = false,
+    onVisibilityChange: (Boolean) -> Unit = {},
+    placeholder: String? = null
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(label, fontSize = 14.sp) },
+        leadingIcon = { Icon(leadingIcon, null, tint = DarkTeal) },
+        trailingIcon = {
+            if (isPassword) {
+                IconButton(onClick = { onVisibilityChange(!passwordVisible) }) {
+                    Icon(
+                        if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        null,
+                        tint = Color.Gray
+                    )
+                }
+            }
+        },
+        placeholder = placeholder?.let { { Text(it, color = Color.Gray.copy(alpha = 0.6f)) } },
+        shape = RoundedCornerShape(14.dp),
+        singleLine = true,
+        visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = DarkTeal,
+            unfocusedBorderColor = Color(0xFFE0E0E0),
+            focusedLabelColor = DarkTeal,
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black
+        ),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+    )
+}
+
+// --- Social Buttons ---
+@Composable
+fun SocialButton(iconRes: Int, text: String, onClick: () -> Unit) {
     Card(
-        modifier = modifier
+        modifier = Modifier
             .height(50.dp)
-            .clickable { /* Handle social login */ },
+            .clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -420,6 +428,50 @@ fun SocialButton(iconRes: Int, text: String, modifier: Modifier = Modifier) {
                     fontSize = 13.sp,
                     color = Color.Black
                 )
+            }
+        }
+    }
+}
+
+// --- Footer Section ---
+@Composable
+fun FooterSection(navController: NavController) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Don't have an account? ",
+                color = Color.Gray,
+                fontFamily = Poppins,
+                fontSize = 14.sp
+            )
+            Text(
+                "Sign Up",
+                color = DarkTeal,
+                fontFamily = Poppins,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                modifier = Modifier.clickable { navController.navigate(Screen.Signup.route) }
+            )
+        }
+
+        Surface(
+            onClick = { navController.navigate(Screen.HomeChoice.route) { popUpTo(Screen.Login.route) { inclusive = true } } },
+            shape = RoundedCornerShape(50),
+            color = Color(0xFFE0F2F1)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Continue as Guest",
+                    color = DarkTeal,
+                    fontFamily = Poppins,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Outlined.ArrowForward, null, tint = DarkTeal, modifier = Modifier.size(16.dp))
             }
         }
     }

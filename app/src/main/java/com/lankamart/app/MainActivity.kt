@@ -55,6 +55,18 @@ class MainActivity : ComponentActivity() {
                         composable("home_choice") {
                             HomeChoiceScreen(navController = navController)
                         }
+                        composable(
+                            route = "home_choice/{userId}/{fullName}",
+                            arguments = listOf(
+                                navArgument("userId") { type = NavType.IntType },
+                                navArgument("fullName") { type = NavType.StringType }
+                            )
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: -1
+                            val fullName = backStackEntry.arguments?.getString("fullName") ?: ""
+                            HomeChoiceScreen(navController = navController, userId = userId, fullName = fullName)
+                        }
+
                         composable("login") {
                             LoginScreen(navController = navController)
                         }
