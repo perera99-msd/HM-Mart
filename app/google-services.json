@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "686463298726",
+    "project_id": "hm-mart-83168",
+    "storage_bucket": "hm-mart-83168.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:686463298726:android:961766042e728619bfd867",
+        "android_client_info": {
+          "package_name": "com.lankamart.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9w0HiNh4yEcst5IU8xYBsZlArqfKzpX0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
