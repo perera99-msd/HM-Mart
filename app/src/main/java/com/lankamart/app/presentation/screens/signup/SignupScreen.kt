@@ -5,8 +5,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -291,93 +291,64 @@ fun SignupScreen(navController: NavController) {
                         Spacer(Modifier.height(8.dp))
                     }
 
-                    // --- UPDATED VALIDATION LOGIC WITH DEBUGGING ---
+                    // --- SIGN UP BUTTON ---
                     Button(
                         onClick = {
                             errorMessage = ""
 
-                            // DEBUG: Log current values
-                            Log.d("SignupDebug", "Name: '$name'")
-                            Log.d("SignupDebug", "Email: '$email'")
-                            Log.d("SignupDebug", "Phone: '$phone'")
-                            Log.d("SignupDebug", "Password: '$password'")
-                            Log.d("SignupDebug", "Confirm Password: '$confirmPassword'")
-
-                            // Trim all inputs first
+                            // Trim inputs
                             val trimmedName = name.trim()
                             val trimmedEmail = email.trim()
                             val trimmedPhone = phone.trim()
                             val trimmedPassword = password.trim()
                             val trimmedConfirmPassword = confirmPassword.trim()
 
-                            Log.d("SignupDebug", "Trimmed Name: '$trimmedName'")
-                            Log.d("SignupDebug", "Trimmed Email: '$trimmedEmail'")
-                            Log.d("SignupDebug", "Trimmed Phone: '$trimmedPhone'")
-
-                            // 1. Specific Field Checks (Use trimmed values)
+                            // 1. Validation
                             if (trimmedName.isEmpty()) {
                                 errorMessage = "Please enter your full name"
-                                Log.d("SignupDebug", "Name validation failed")
                                 return@Button
                             }
                             if (trimmedEmail.isEmpty()) {
                                 errorMessage = "Please enter your email"
-                                Log.d("SignupDebug", "Email validation failed - empty")
                                 return@Button
                             } else if (!isValidEmail(trimmedEmail)) {
                                 errorMessage = "Please enter a valid email address"
-                                Log.d("SignupDebug", "Email validation failed - invalid format")
                                 return@Button
                             }
                             if (trimmedPhone.isEmpty()) {
                                 errorMessage = "Please enter your phone number"
-                                Log.d("SignupDebug", "Phone validation failed - empty")
                                 return@Button
                             } else if (!isValidPhone(trimmedPhone)) {
-                                // Clean phone number for better error message
                                 val digitsOnly = trimmedPhone.replace(Regex("[^0-9]"), "")
-                                errorMessage = "Phone number must have at least 9 digits (you entered ${digitsOnly.length})"
-                                Log.d("SignupDebug", "Phone validation failed - only ${digitsOnly.length} digits")
+                                errorMessage = "Phone number must have at least 9 digits (entered ${digitsOnly.length})"
                                 return@Button
                             }
                             if (trimmedPassword.isEmpty()) {
                                 errorMessage = "Please enter a password"
-                                Log.d("SignupDebug", "Password validation failed - empty")
                                 return@Button
                             }
                             if (trimmedConfirmPassword.isEmpty()) {
                                 errorMessage = "Please confirm your password"
-                                Log.d("SignupDebug", "Confirm password validation failed - empty")
                                 return@Button
                             }
-
-                            // 2. Security Checks
                             if (!isStrongPassword(trimmedPassword)) {
-                                errorMessage = "Please use a strong password (8+ chars with uppercase, lowercase, number & symbol)!"
-                                Log.d("SignupDebug", "Password strength validation failed")
+                                errorMessage = "Please use a strong password!"
                                 return@Button
                             }
                             if (trimmedPassword != trimmedConfirmPassword) {
                                 errorMessage = "Passwords do not match!"
-                                Log.d("SignupDebug", "Password match validation failed")
                                 return@Button
                             }
 
-                            // If we get here, all validations passed
-                            Log.d("SignupDebug", "All validations passed, proceeding to API call")
-
+                            // 2. API Call
                             loading = true
-
                             scope.launch(Dispatchers.IO) {
                                 try {
-                                    // Clean phone number for API (remove spaces, dashes, etc.)
                                     val cleanPhone = trimmedPhone.replace(Regex("[^0-9]"), "")
-
-                                    Log.d("SignupDebug", "API Request - Name: $trimmedName, Email: $trimmedEmail, Phone: $cleanPhone")
-
+                                    
                                     val response = ApiClient.signupApi.registerUser(
                                         SignupRequest(
-                                            name = trimmedName,
+                                            full_name = trimmedName,
                                             email = trimmedEmail,
                                             country_code = countryCode,
                                             phone = cleanPhone,
@@ -389,15 +360,14 @@ fun SignupScreen(navController: NavController) {
                                         loading = false
                                         val body = response.body()
                                         if (body != null) {
-                                            Log.d("SignupDebug", "API Response: ${body.status} - ${body.message}")
                                             if (body.status == "success") {
-                                                // Clear form after successful signup
+                                                // Clear form
                                                 name = ""
                                                 email = ""
                                                 phone = ""
                                                 password = ""
                                                 confirmPassword = ""
-
+                                                
                                                 navController.navigate(Screen.Login.route) {
                                                     popUpTo(Screen.Signup.route) { inclusive = true }
                                                 }
@@ -406,16 +376,14 @@ fun SignupScreen(navController: NavController) {
                                             }
                                         } else {
                                             errorMessage = "Server returned empty response"
-                                            Log.d("SignupDebug", "API Response: Empty body")
                                         }
                                     }
                                 } catch (e: Exception) {
                                     launch(Dispatchers.Main) {
                                         loading = false
                                         errorMessage = "Unable to connect to server!"
-                                        Log.e("SignupError", "Connection error: ${e.message}")
+                                        Log.e("SignupError", e.message.toString())
                                     }
-                                    Log.e("SignupError", e.message.toString())
                                 }
                             }
                         },
@@ -431,7 +399,7 @@ fun SignupScreen(navController: NavController) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // --- Google ONLY (Facebook Removed) ---
+                    // --- Google Login ---
                     Box(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
@@ -439,7 +407,7 @@ fun SignupScreen(navController: NavController) {
                         CompactSocialButton(
                             text = "Continue with Google",
                             iconRes = R.drawable.ic_google,
-                            modifier = Modifier.fillMaxWidth(0.8f) // 80% width for better look
+                            modifier = Modifier.fillMaxWidth(0.8f)
                         ) {
                             val googleUrl = "https://yourdomain.com/google_login.php"
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(googleUrl)))

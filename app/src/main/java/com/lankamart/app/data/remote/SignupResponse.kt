@@ -1,6 +1,6 @@
 package com.lankamart.app.data.remote
 
-data class ApiResponse(
+data class SignupResponse(
     val status: String,
     val message: String
 )
